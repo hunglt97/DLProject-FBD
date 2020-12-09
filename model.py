@@ -2,7 +2,7 @@ from scipy.io import loadmat
 # from skimage import io
 # from skimage.transform import resize
 from sklearn.model_selection import train_test_split
-import keras
+# import keras
 
 import pandas as pd
 import numpy as np
@@ -22,6 +22,7 @@ import tensorflow.keras as keras
 # from keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.applications.resnet50 import ResNet50
 from tensorflow.keras import layers, Model
+from tensorflow.keras.callbacks import ModelCheckpoint
 from tensorflow.keras import backend as K
 
 from keras.utils import plot_model
@@ -30,136 +31,93 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from datetime import timedelta
 
-import utils1
-
-
-# import data
-(x_train, y_train), (x_test, y_test) = utils1.get_data('SCUT-FBP5500_v2/')
-y_train_beauty = y_train[:, 0]
-y_train_race = y_train[:, 1]
-y_train_gender = y_train[:, 2]
-y_test_beauty = y_test[:, 0]
-y_test_race = y_test[:, 1]
-y_test_gender = y_test[:, 2]
-
-# # Split data to train & test
-# x_train, x_test, y_train, y_test = train_test_split(images, target, test_size=0.2, random_state=6)
-
-print(x_train.shape)
-print(y_train.shape)
-print(y_train_beauty.shape)
-print(y_train_race.shape)
-print(y_train_gender.shape)
-print(y_train[:5])
-
-x_train = x_train.reshape(3300, 224, 224, 3)
-x_test = x_test.reshape(2200, 224, 224, 3)
-# normalize inputs between [0, 1]
-x_train = keras.applications.resnet50.preprocess_input(x_train)
-x_test = keras.applications.resnet50.preprocess_input(x_test)
-
-# model architecture
-pre_trained_model = ResNet50(weights='imagenet',
-                             include_top=False,
-                             input_shape=(224, 224, 3))
-for layer in pre_trained_model.layers:
-    layer.trainable = False
-
-pre_trained_model.summary()
-# # variable
-# batch_size = 256
-# epochs = 5
-# lr = 0.001
-# decay = lr/epochs
-
-for i in range(1, 4):
-    for j in range(1, 4):
-        pre_trained_model.get_layer(f'conv5_block{i}_{j}_bn').trainable = True
-        pre_trained_model.get_layer(f'conv5_block{i}_{j}_conv').trainable = True
-
-for i in range(1, 7):
-    for j in range(1, 4):
-        pre_trained_model.get_layer(f'conv4_block{i}_{j}_bn').trainable = True
-        pre_trained_model.get_layer(f'conv4_block{i}_{j}_conv').trainable = True
-
-last_layer = pre_trained_model.get_layer('conv5_block3_out')
-last_output = last_layer.output
-
-last_output = layers.GlobalAveragePooling2D()(last_output)
-
-# beauty branch
-beauty_branch = layers.Dense(1, activation='relu', name='beauty_output')(last_output)
-
-# race branch
-race_branch = layers.Dense(2, activation='softmax', name='race_output')(last_output)
-
-# gender branch
-gender_branch = layers.Dense(2, activation='softmax', name='gender_output')(last_output)
-
-model = Model(inputs=pre_trained_model.input,
-              outputs=[beauty_branch, race_branch, gender_branch])
-model.summary()
-
-
-def root_mean_squared_error(y_true, y_pred):
-    return K.sqrt(K.mean(K.square(y_pred - y_true)))
-
 
 def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
 
 
-from tensorflow.keras.callbacks import ModelCheckpoint
+# model architecture
+def my_model():
+    pre_trained_model = ResNet50(weights='imagenet',
+                                 include_top=False,
+                                 input_shape=(224, 224, 3))
+    for layer in pre_trained_model.layers:
+        layer.trainable = False
 
-filepath = "weights_min_loss.hdf5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
-callbacks_list = [checkpoint]
+    for i in range(1, 4):
+        for j in range(1, 4):
+            pre_trained_model.get_layer(f'conv5_block{i}_{j}_bn').trainable = True
+            pre_trained_model.get_layer(f'conv5_block{i}_{j}_conv').trainable = True
 
-# opt = keras.optimizers.RMSprop(lr=1e-3)
-model.compile(optimizer=keras.optimizers.Adam(),
-              loss={'beauty_output': 'mse',
-                    'race_output': 'sparse_categorical_crossentropy',
-                    'gender_output': 'sparse_categorical_crossentropy'},
-              loss_weights={'beauty_output': .001,
-                            'race_output': 1.,
-                            'gender_output': 1.})
+    for i in range(1, 7):
+        for j in range(1, 4):
+            pre_trained_model.get_layer(f'conv4_block{i}_{j}_bn').trainable = True
+            pre_trained_model.get_layer(f'conv4_block{i}_{j}_conv').trainable = True
 
-# train_datagen = keras.preprocessing.image.ImageDataGenerator()
-# test_datagen = keras.preprocessing.image.ImageDataGenerator()
-# train_generator = train_datagen.flow(x_train, y_train, )
-# test_generator = train_datagen.flow(x_test, y_test, batch_size=32)
+    last_layer = pre_trained_model.get_layer('conv5_block3_out')
+    last_output = last_layer.output
 
-history = model.fit(x_train,
-                    {'beauty_output': y_train_beauty,
-                     'race_output': y_train_race,
-                     'gender_output': y_train_gender},
-                    epochs=20, batch_size=32,
-                    verbose=1,
-                    callbacks=callbacks_list,
-                    validation_split=0.2)
+    last_output = layers.GlobalAveragePooling2D()(last_output)
 
-model.load_weights('weights_min_loss.hdf5')
+    # beauty branch
+    beauty_branch = layers.Dense(1, activation='relu', name='beauty_output')(last_output)
 
-import matplotlib.pyplot as plt
+    # race branch
+    race_branch = layers.Dense(1, activation='sigmoid', name='race_output')(last_output)
 
-plt.plot(history.history['rmse'])
-plt.plot(history.history['val_rmse'])
+    # gender branch
+    gender_branch = layers.Dense(1, activation='sigmoid', name='gender_output')(last_output)
 
-y_pred = model.predict(x_test)
+    model = Model(inputs=pre_trained_model.input,
+                  outputs=[beauty_branch, race_branch, gender_branch])
 
-y_pred.shape = (2200, )
+    model.compile(optimizer=keras.optimizers.Adam(),
+                  loss={'beauty_output': 'mse',
+                        'race_output': 'mse',
+                        'gender_output': 'mse'},
+                  loss_weights={'beauty_output': .1,
+                                'race_output': 1.,
+                                'gender_output': 1.})
+    return model
 
-cov = np.cov(y_pred, y_test)
-print('pc =', cov/(np.std(y_pred)*np.std(y_test)))
-print('mae =', np.mean(np.abs(y_pred-y_test)))
-print('rmse =', np.sqrt(np.mean(np.square(y_pred-y_test))))
-test_img = x_test[1]
-test_img = test_img[np.newaxis, :, :, :]
-print(y_test[1], model.predict(test_img))
-image = keras.preprocessing.image.load_img('test1.jpg', target_size=(224,224))
-input_arr = keras.preprocessing.image.img_to_array(image)
-input_arr = np.array([input_arr])
-model.predict(input_arr)
+
+def train_model(x_train, y_train_beauty, y_train_race, y_train_gender, filepath="weights_min_loss.hdf5"):
+    model = my_model()
+    model.summary()
+    checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+    callbacks_list = [checkpoint]
+    history = model.fit(x_train,
+                        {'beauty_output': y_train_beauty,
+                         'race_output': y_train_race,
+                         'gender_output': y_train_gender},
+                        epochs=20, batch_size=64,
+                        verbose=1,
+                        callbacks=callbacks_list,
+                        validation_split=0.2)
+
+    # Display curves of loss every epoch
+    loss = history.history['loss']
+    val_loss = history.history['val_loss']
+    epochs = range(1, len(loss) + 1)
+    plt.plot(epochs, loss, 'r', label='Training loss')
+    plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.ylabel('Validation loss')
+    plt.xlabel('No. epoch')
+    plt.legend()
+    plt.show()
+
+
+def predict_model(x_test, filepath):
+    model = my_model()
+    model.load_weights(filepath)
+    y_pred = model.predict(x_test)
+    y_pred_beauty = np.squeeze(y_pred[0])
+    y_pred_race = np.round(np.squeeze(y_pred[1]))
+    y_pred_gender = np.round(np.squeeze(y_pred[2]))
+    return y_pred_beauty, y_pred_race, y_pred_gender
+
+
 
 
 
