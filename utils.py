@@ -1,3 +1,4 @@
+import tensorflow.keras as keras
 import numpy as np
 import pandas as pd
 import cv2
@@ -41,3 +42,6 @@ def get_data(data_path='SCUT-FBP5500_v2'):
     y_train = np.concatenate((np.array(data_train[1]).reshape(-1, 1), aux_train), axis=1)
     
     return (x_train, y_train), (x_test, y_test)
+
+
+
