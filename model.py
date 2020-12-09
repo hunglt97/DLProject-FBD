@@ -136,6 +136,7 @@ history = model.fit({'main_input': x_train},
                     callbacks=callbacks_list,
                     validation_split=0.2)
 
+model.load_weights('weights_min_loss.hdf5')
 
 
 
