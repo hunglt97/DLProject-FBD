@@ -17,11 +17,11 @@ import seaborn as sns
 from IPython.display import Image
 from IPython.display import clear_output
 
-import keras
-from keras.layers import Input, Dense, Dropout, Activation, Flatten, BatchNormalization
-from keras.layers import Conv2D, MaxPooling2D
+import tensorflow.keras as keras
+# from keras.layers import Input, Dense, Dropout, Activation, Flatten, BatchNormalization
+# from keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras.applications.resnet50 import ResNet50
-from tensorflow.keras import layers
+from tensorflow.keras import layers, Model
 from tensorflow.keras import backend as K
 
 from keras.utils import plot_model
@@ -85,17 +85,19 @@ for i in range(1, 7):
 last_layer = pre_trained_model.get_layer('conv5_block3_out')
 last_output = last_layer.output
 
+last_output = layers.GlobalAveragePooling2D()(last_output)
+
 # beauty branch
-beauty_branch = Dense(1, activation='relu', name='beauty_output')(last_output)
+beauty_branch = layers.Dense(1, activation='relu', name='beauty_output')(last_output)
 
 # race branch
-race_branch = Dense(2, activation='softmax', name='race_output')(last_output)
+race_branch = layers.Dense(2, activation='softmax', name='race_output')(last_output)
 
 # gender branch
-gender_branch = Dense(2, activation='softmax', name='gender_output')(last_output)
+gender_branch = layers.Dense(2, activation='softmax', name='gender_output')(last_output)
 
-model = keras.Model(inputs=pre_trained_model.input,
-                    outputs=[beauty_branch, race_branch, gender_branch])
+model = Model(inputs=pre_trained_model.input,
+              outputs=[beauty_branch, race_branch, gender_branch])
 model.summary()
 
 
@@ -107,14 +109,14 @@ def rmse(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
 
 
-from keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint
 
 filepath = "weights_min_loss.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
-opt = keras.optimizers.RMSprop(lr=1e-3)
-model.compile(optimizer='rmsprop',
+# opt = keras.optimizers.RMSprop(lr=1e-3)
+model.compile(optimizer=keras.optimizers.Adam(),
               loss={'beauty_output': 'mse',
                     'race_output': 'sparse_categorical_crossentropy',
                     'gender_output': 'sparse_categorical_crossentropy'},
@@ -127,7 +129,7 @@ model.compile(optimizer='rmsprop',
 # train_generator = train_datagen.flow(x_train, y_train, )
 # test_generator = train_datagen.flow(x_test, y_test, batch_size=32)
 
-history = model.fit({'main_input': x_train},
+history = model.fit(x_train,
                     {'beauty_output': y_train_beauty,
                      'race_output': y_train_race,
                      'gender_output': y_train_gender},
@@ -137,6 +139,28 @@ history = model.fit({'main_input': x_train},
                     validation_split=0.2)
 
 model.load_weights('weights_min_loss.hdf5')
+
+import matplotlib.pyplot as plt
+
+plt.plot(history.history['rmse'])
+plt.plot(history.history['val_rmse'])
+
+y_pred = model.predict(x_test)
+
+y_pred.shape = (2200, )
+
+cov = np.cov(y_pred, y_test)
+print('pc =', cov/(np.std(y_pred)*np.std(y_test)))
+print('mae =', np.mean(np.abs(y_pred-y_test)))
+print('rmse =', np.sqrt(np.mean(np.square(y_pred-y_test))))
+test_img = x_test[1]
+test_img = test_img[np.newaxis, :, :, :]
+print(y_test[1], model.predict(test_img))
+image = keras.preprocessing.image.load_img('test1.jpg', target_size=(224,224))
+input_arr = keras.preprocessing.image.img_to_array(image)
+input_arr = np.array([input_arr])
+model.predict(input_arr)
+
 
 
 
