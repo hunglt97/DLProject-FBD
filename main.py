@@ -36,17 +36,20 @@ if __name__ == '__main__':
     print('race acc', accuracy_score(y_test_race, y_pred_race))
     print('gender acc', accuracy_score(y_test_gender, y_pred_gender))
 
-    test_img = x_test[1]
-    test_img = test_img[np.newaxis, :, :, :]
-    y_pred_beauty_1, y_pred_race_1, y_pred_gender_1 = fbdnet.predict_model(test_img, filepath)
-    print(y_test_beauty[1], y_pred_beauty_1)
-    print(y_test_race[1], y_pred_race_1)
-    print(y_test_gender[1], y_pred_gender_1)
+    for i in range(2, 200, 20):
+        test_img = x_test[i]
+        test_img = test_img[np.newaxis, :, :, :]
+        y_pred_beauty_1, y_pred_race_1, y_pred_gender_1 = fbdnet.predict_model(test_img, filepath)
+        print(y_test_beauty[i], y_pred_beauty_1)
+        print(y_test_race[i], y_pred_race_1)
+        print(y_test_gender[i], y_pred_gender_1)
 
-    image = keras.preprocessing.image.load_img('test1.jpg', target_size=(224, 224))
-    input_arr = keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr])
-    print(fbdnet.predict_model(input_arr, filepath))
+
+    # fbdnet.demo('test1.jpg', filepath)
+    # fbdnet.demo('test2.jpg', filepath)
+    # fbdnet.demo('test3.jpg', filepath)
+    # fbdnet.demo('test4.jpg', filepath)
+
 
 
 
