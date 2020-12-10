@@ -73,8 +73,8 @@ def my_model():
 
     model.compile(optimizer=keras.optimizers.Adam(),
                   loss={'beauty_output': 'mse',
-                        'race_output': 'mse',
-                        'gender_output': 'mse'},
+                        'race_output': 'binary_crossentropy',
+                        'gender_output': 'binary_crossentropy'},
                   loss_weights={'beauty_output': .1,
                                 'race_output': 1.,
                                 'gender_output': 1.})
@@ -93,7 +93,7 @@ def train_model(x_train, y_train_beauty, y_train_race, y_train_gender, filepath=
                         epochs=20, batch_size=64,
                         verbose=1,
                         callbacks=callbacks_list,
-                        validation_split=0.2)
+                        validation_split=1/3)
 
     # Display curves of loss every epoch
     loss = history.history['loss']
@@ -102,7 +102,7 @@ def train_model(x_train, y_train_beauty, y_train_race, y_train_gender, filepath=
     plt.plot(epochs, loss, 'r', label='Training loss')
     plt.plot(epochs, val_loss, 'b', label='Validation loss')
     plt.title('Training and validation loss')
-    plt.ylabel('Validation loss')
+    plt.ylabel('Loss')
     plt.xlabel('No. epoch')
     plt.legend()
     plt.show()
@@ -116,6 +116,13 @@ def predict_model(x_test, filepath):
     y_pred_race = np.round(np.squeeze(y_pred[1]))
     y_pred_gender = np.round(np.squeeze(y_pred[2]))
     return y_pred_beauty, y_pred_race, y_pred_gender
+
+
+def demo(image, filepath):
+    image = keras.preprocessing.image.load_img(image, target_size=(224, 224))
+    input_arr = keras.preprocessing.image.img_to_array(image)
+    input_arr = np.array([input_arr])
+    print(predict_model(input_arr, filepath))
 
 
 
