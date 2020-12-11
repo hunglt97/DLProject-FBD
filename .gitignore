@@ -4,3 +4,5 @@ SCUT-FBP5500_v2/
 .idea/misc.xml
 .idea/workspace.xml
 .idea/workspace.xml
+*.xml
+*.pyc
