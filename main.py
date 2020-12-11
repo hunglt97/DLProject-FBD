@@ -22,10 +22,6 @@ if __name__ == '__main__':
     filepath = "weights.hdf5"
     # model = fbdnet.my_model()
     # fbdnet.train_model(x_train, y_train_beauty, y_train_race, y_train_gender, filepath)
-    #
-    # model.load_weights('weights_min_loss.hdf5')
-    # y_pred = model.predict(x_test)
-    # y_pred_beauty = np.squeeze(y_pred[0])
 
     y_pred_beauty, y_pred_race, y_pred_gender = fbdnet.predict_model(x_test, filepath)
 
@@ -36,7 +32,7 @@ if __name__ == '__main__':
     print('race acc', accuracy_score(y_test_race, y_pred_race))
     print('gender acc', accuracy_score(y_test_gender, y_pred_gender))
 
-    for i in range(2, 200, 20):
+    for i in range(2, 200, 40):
         test_img = x_test[i]
         test_img = test_img[np.newaxis, :, :, :]
         y_pred_beauty_1, y_pred_race_1, y_pred_gender_1 = fbdnet.predict_model(test_img, filepath)
@@ -44,11 +40,10 @@ if __name__ == '__main__':
         print(y_test_race[i], y_pred_race_1)
         print(y_test_gender[i], y_pred_gender_1)
 
-
-    # fbdnet.demo('test1.jpg', filepath)
-    # fbdnet.demo('test2.jpg', filepath)
-    # fbdnet.demo('test3.jpg', filepath)
-    # fbdnet.demo('test4.jpg', filepath)
+    fbdnet.demo('test1.jpg', filepath)
+    fbdnet.demo('test2.jpg', filepath)
+    fbdnet.demo('test3.jpg', filepath)
+    fbdnet.demo('test4.jpg', filepath)
 
 
 
