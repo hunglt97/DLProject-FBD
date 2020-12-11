@@ -7,3 +7,4 @@ SCUT-FBP5500_v2/
 *.xml
 *.pyc
 __pycache__/utils1.cpython-38.pyc
+*.hdf5
