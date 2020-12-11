@@ -93,7 +93,7 @@ def train_model(x_train, y_train_beauty, y_train_race, y_train_gender, filepath=
                         epochs=20, batch_size=64,
                         verbose=1,
                         callbacks=callbacks_list,
-                        validation_split=1/3)
+                        validation_split=0.2)
 
     # Display curves of loss every epoch
     loss = history.history['loss']
