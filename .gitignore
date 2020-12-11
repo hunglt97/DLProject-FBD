@@ -6,3 +6,4 @@ SCUT-FBP5500_v2/
 .idea/workspace.xml
 *.xml
 *.pyc
+__pycache__/utils1.cpython-38.pyc
