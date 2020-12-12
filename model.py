@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 
 import pandas as pd
 import numpy as np
+import os
 
 from os.path import join
 
@@ -60,13 +61,16 @@ def my_model():
     last_output = layers.GlobalAveragePooling2D()(last_output)
 
     # beauty branch
-    beauty_branch = layers.Dense(1, activation='relu', name='beauty_output')(last_output)
+    beauty_branch = layers.Dense(64, activation='relu')(last_output)
+    beauty_branch = layers.Dense(1, activation='relu', name='beauty_output')(beauty_branch)
 
     # race branch
-    race_branch = layers.Dense(1, activation='sigmoid', name='race_output')(last_output)
+    race_branch = layers.Dense(64, activation='relu')(last_output)
+    race_branch = layers.Dense(1, activation='sigmoid', name='race_output')(race_branch)
 
     # gender branch
-    gender_branch = layers.Dense(1, activation='sigmoid', name='gender_output')(last_output)
+    gender_branch = layers.Dense(64, activation='relu')(last_output)
+    gender_branch = layers.Dense(1, activation='sigmoid', name='gender_output')(gender_branch)
 
     model = Model(inputs=pre_trained_model.input,
                   outputs=[beauty_branch, race_branch, gender_branch])
@@ -75,25 +79,30 @@ def my_model():
                   loss={'beauty_output': 'mse',
                         'race_output': 'binary_crossentropy',
                         'gender_output': 'binary_crossentropy'},
-                  loss_weights={'beauty_output': .1,
-                                'race_output': 1.,
-                                'gender_output': 1.})
+                  loss_weights={'beauty_output': .6,
+                                'race_output': .2,
+                                'gender_output': .2})
     return model
 
 
 def train_model(x_train, y_train_beauty, y_train_race, y_train_gender, filepath="weights_min_loss.hdf5"):
     model = my_model()
     model.summary()
+    save_model = True
+    if save_model:
+        model_json = model.to_json()
+        with open("model.json", "w") as json_file:
+            json_file.write(model_json)
     checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
     callbacks_list = [checkpoint]
     history = model.fit(x_train,
                         {'beauty_output': y_train_beauty,
                          'race_output': y_train_race,
                          'gender_output': y_train_gender},
-                        epochs=20, batch_size=64,
+                        epochs=15, batch_size=64,
                         verbose=1,
                         callbacks=callbacks_list,
-                        validation_split=0.2)
+                        validation_split=0.25)
 
     # Display curves of loss every epoch
     loss = history.history['loss']
@@ -101,11 +110,16 @@ def train_model(x_train, y_train_beauty, y_train_race, y_train_gender, filepath=
     epochs = range(1, len(loss) + 1)
     plt.plot(epochs, loss, 'r', label='Training loss')
     plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.yscale("log")
     plt.title('Training and validation loss')
     plt.ylabel('Loss')
     plt.xlabel('No. epoch')
     plt.legend()
-    plt.show()
+    fig_num = 0
+    fig_name = "figures/Figure_loss"
+    while os.path.exists('{}_{:d}.png'.format(fig_name, fig_num)):
+        fig_num += 1
+    plt.savefig('{}_{:d}.png'.format(fig_name, fig_num))
 
 
 def predict_model(x_test, filepath):
@@ -119,10 +133,13 @@ def predict_model(x_test, filepath):
 
 
 def demo(image, filepath):
-    image = keras.preprocessing.image.load_img(image, target_size=(224, 224))
+    image = keras.preprocessing.image.load_img("images/" + image, target_size=(224, 224))
     input_arr = keras.preprocessing.image.img_to_array(image)
     input_arr = np.array([input_arr])
-    print(predict_model(input_arr, filepath))
+    y_pred_beauty, y_pred_race, y_pred_gender = predict_model(input_arr, filepath)
+    print("Beauty score:", y_pred_beauty)
+    print("Race: ", ("Asian" if y_pred_race == 0 else "Caucasian"))
+    print("Gender: ", ("Female" if y_pred_gender == 0 else "Male"))
 
 
 
