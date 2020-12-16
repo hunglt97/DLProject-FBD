@@ -8,4 +8,4 @@ https://drive.google.com/file/d/1rvJrlROsjuwxFVni6yIg7YaKlUxGG83X/view?usp=shari
 
 # Beautification
 ## This folder is modified from [here](https://github.com/zoezhou1999/BeautifyBasedOnGAN). 
-##Using code in command.jpnb to execute the project, the required pretrained model and data are also [provied](https://drive.google.com/file/d/1rUZ2bmXl0Re952l4QwO1s4cJjn3kKJ4C/view) 
+## Using code in command.jpnb to execute the project, the required pretrained model and data are also [provied](https://drive.google.com/file/d/1rUZ2bmXl0Re952l4QwO1s4cJjn3kKJ4C/view) 
