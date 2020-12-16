@@ -9,6 +9,7 @@ https://drive.google.com/file/d/1rvJrlROsjuwxFVni6yIg7YaKlUxGG83X/view?usp=shari
 
 ## Run
 main.py file is for training and predicting an will print the result to console.
+
 demo_utils.py file takes an input image and output the image with predictions overlaid.
 
 # Beautification
