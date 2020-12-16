@@ -7,6 +7,10 @@ Dataset is required to train the model again. Images in the dataset depict the c
 ## Pretrained Weights:
 https://drive.google.com/file/d/1rvJrlROsjuwxFVni6yIg7YaKlUxGG83X/view?usp=sharing
 
+## Run
+main.py file is for training and predicting an will print the result to console.
+demo_utils.py file takes an input image and output the image with predictions overlaid.
+
 # Beautification
 This folder is modified from [here](https://github.com/zoezhou1999/BeautifyBasedOnGAN). 
 
